@@ -8,6 +8,11 @@ var express = require('express');
 var app = express();
 var port = process.env.PORT || 8080;
 
+var fs = require('fs');
+var bodyParser = require('body-parser');
+var multer = require('multer');
+var cookieParser = require('cookie-parser');
+
 // ROUTES
 // ==============================================
 
@@ -63,8 +68,15 @@ router.get('/hello/:name', function(req, res) {
 // apply the routes to our application
 app.use('/', router);
 
+// other tutorial
+// ==============================================
+
 // server static files
 app.use(express.static('public'));
+app.use(bodyParser.urlencoded({ extended: false}));
+app.use(multer({ dest: '/tmp/'}));
+app.use(cookieParser());
+
 app.get('/index.html', function(req, res) {
   res.sendFile(__dirname + "/" + "index.html");
 });
@@ -78,6 +90,39 @@ app.get('/process_get', function(req, res) {
   res.end(JSON.stringify(response));
 });
 
+// create application/x-www-form-urlencoded parser
+var urlencodedParser = bodyParser.urlencoded({ extended: false});
+
+app.post('/process_post', urlencodedParser, function(req, res) {
+  response = {
+    first_name: req.body.first_name,
+    last_name: req.body.last_name
+  };
+  console.log(response);
+  res.end(JSON.stringify(response));
+});
+
+app.post('/file_upload', function(req, res) {
+  console.log(req.files.file.name);
+  console.log(req.files.file.path);
+  console.log(req.files.file.type);
+  var file = __dirname + "/" + req.files.file.name;
+
+  fs.readFile(req.files.file.path, function(err, data) {
+    fs.writeFile(file, data, function(err) {
+      if(err){
+        console.log(err);
+      } else {
+        response = {
+          message: "File uploaded successfully",
+          filename: req.files.file.name
+        };
+      }
+      console.log(response);
+      res.end(JSON.stringify(response));
+    });
+  });
+});
 
 // START THE SERVER
 // ==============================================
